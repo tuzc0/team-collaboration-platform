@@ -1,0 +1,51 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Operating systems
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Java
+target/
+out/
+*.class
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+
+# Rust
+target/
+
+# Elixir
+_build/
+deps/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets / certificates
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Temporary files
+*.tmp
+*.temp
