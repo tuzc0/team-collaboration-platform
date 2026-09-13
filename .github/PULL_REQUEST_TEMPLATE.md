@@ -10,6 +10,7 @@ Describa brevemente qué se implementó o modificó.
 
 - [ ] Nueva funcionalidad
 - [ ] Corrección de error
+- [ ] Tarea técnica
 - [ ] Refactorización
 - [ ] Pruebas
 - [ ] Documentación

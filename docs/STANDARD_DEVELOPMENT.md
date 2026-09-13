@@ -301,6 +301,7 @@ Formato:
 ```text
 feature/<modulo>-<descripcion>
 fix/<modulo>-<descripcion>
+tech/<descripcion>
 refactor/<modulo>-<descripcion>
 docs/<descripcion>
 test/<modulo>-<descripcion>
@@ -312,8 +313,13 @@ Ejemplos:
 feature/auth-login
 feature/groups-create
 fix/auth-token-expiration
+tech/docker-compose
+tech/linux-vm
+tech/postgresql-container
+tech/cassandra-evaluation
 refactor/messages-repository
-docs/api-authentication
+docs/system-architecture
+test/auth-login
 ```
 
 ---
