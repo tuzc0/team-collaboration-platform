@@ -42,6 +42,7 @@ Formato:
 ```text
 feature/<modulo>-<descripcion>
 fix/<modulo>-<descripcion>
+tech/<descripcion>
 refactor/<modulo>-<descripcion>
 docs/<descripcion>
 test/<modulo>-<descripcion>
@@ -53,6 +54,9 @@ Ejemplos:
 feature/auth-login
 feature/groups-create
 fix/auth-token-expiration
+tech/docker-compose
+tech/linux-vm
+tech/postgresql-container
 refactor/messages-repository
 docs/update-api-auth
 test/projects-service
