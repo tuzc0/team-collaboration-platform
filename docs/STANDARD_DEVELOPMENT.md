@@ -1,10 +1,10 @@
 # Estándar de Desarrollo del Proyecto
 
-**Versión:** 0.1  
+**Versión:** 0.2  
 **Estado:** Prototipo  
 **Proyecto:** Plataforma de comunicación y gestión ligera de proyectos  
 **Clientes:** Aplicación de escritorio y aplicación móvil  
-**Infraestructura:** GNU/Linux, Docker y Docker Compose
+**Infraestructura:** Ubuntu Server 24.04 LTS, Vagrant, VirtualBox, Docker Engine y Docker Compose
 
 ---
 
@@ -116,7 +116,7 @@ Se utilizará para información estructurada y fuertemente relacionada:
 - configuración;
 - información relacionada con autenticación.
 
-### 3.2 Cassandra o ScyllaDB
+### 3.2 Cassandra
 
 Se utilizará una base NoSQL distribuida para información de gran volumen y acceso orientado a eventos:
 
@@ -126,7 +126,7 @@ Se utilizará una base NoSQL distribuida para información de gran volumen y acc
 - actividad;
 - información histórica.
 
-La selección definitiva entre Cassandra y ScyllaDB se realizará mediante una prueba técnica.
+Cassandra es la base NoSQL distribuida seleccionada oficialmente para el proyecto.
 
 ### 3.3 Redis
 
@@ -156,32 +156,48 @@ Las bases de datos almacenarán únicamente la metadata y referencia correspondi
 
 ## 4. Infraestructura
 
-El sistema será desplegado inicialmente en una máquina virtual GNU/Linux.
+El sistema será desplegado inicialmente en una máquina virtual con **Ubuntu Server 24.04 LTS**.
 
-Se propone:
-
-**Ubuntu Server 24.04 LTS**
-
-Los componentes del servidor deberán ejecutarse mediante contenedores Docker.
-
-Durante las primeras etapas se utilizará Docker Compose.
+El entorno local se administrará mediante Vagrant y VirtualBox. La configuración común de desarrollo será:
 
 ```text
-VM Linux
-│
-└── Docker Compose
-    ├── gateway
-    ├── auth-service
-    ├── core-service
-    ├── postgres
-    ├── cassandra/scylla
-    ├── redis
-    └── minio
+RAM:        6 GB
+CPU:        4 CPU virtuales
+Disco:      80 GB
+IP privada: 192.168.33.30
 ```
 
-Los datos persistentes deberán almacenarse en volúmenes.
+El `Vagrantfile` deberá definir la máquina y `scripts/provision.sh` deberá instalar Docker Engine y Docker Compose de forma reproducible e idempotente.
 
-Las bases de datos no deberán exponerse directamente a redes externas.
+Durante las primeras etapas, los componentes del servidor se ejecutarán mediante Docker Compose:
+
+```text
+Equipo anfitrión
+│
+└── Vagrant + VirtualBox
+    │
+    └── Ubuntu Server 24.04 LTS
+        │
+        └── Docker Compose
+            ├── Servicios predeterminados
+            │   ├── postgres
+            │   ├── redis
+            │   └── mailpit
+            ├── Perfil messaging
+            │   └── cassandra
+            └── Perfil storage
+                └── minio
+```
+
+Mailpit será utilizado exclusivamente en desarrollo para probar recuperación de contraseña, verificación de correo y otras funciones relacionadas con email.
+
+El gateway, Auth Service y Core Service se incorporarán a Compose cuando exista su implementación inicial.
+
+Los datos persistentes deberán almacenarse en volúmenes nombrados administrados por Docker. No deberán crearse carpetas de datos versionadas dentro del repositorio.
+
+Los puertos publicados se utilizarán únicamente a través de la red privada de desarrollo. En despliegues posteriores, las bases de datos no deberán exponerse directamente a redes externas.
+
+La configuración sensible se almacenará en `infrastructure/.env`. Este archivo no deberá versionarse; el repositorio conservará únicamente `infrastructure/.env.example` con valores de referencia.
 
 ---
 
@@ -191,6 +207,7 @@ Estructura inicial recomendada:
 
 ```text
 project/
+├── Vagrantfile
 ├── clients/
 │   ├── desktop/
 │   └── mobile/
@@ -198,9 +215,10 @@ project/
 │   ├── auth/
 │   └── core/
 ├── infrastructure/
-│   ├── docker/
-│   ├── nginx/
+│   ├── .env.example
 │   └── compose.yaml
+├── scripts/
+│   └── provision.sh
 ├── database/
 │   ├── postgres/
 │   └── cassandra/
@@ -316,7 +334,7 @@ fix/auth-token-expiration
 tech/docker-compose
 tech/linux-vm
 tech/postgresql-container
-tech/cassandra-evaluation
+tech/cassandra-setup
 refactor/messages-repository
 docs/system-architecture
 test/auth-login
@@ -448,7 +466,7 @@ Una tarea se considerará terminada cuando, cuando corresponda:
 - no existan secretos dentro del código;
 - no existan vulnerabilidades críticas conocidas introducidas por el cambio.
 
-“Funciona en mi computadora” no constituye un criterio de finalización.
+"Funciona en mi computadora" no constituye un criterio de finalización.
 
 ---
 
@@ -750,20 +768,37 @@ Buenas prácticas:
 
 ## 25. Docker Compose
 
-Docker Compose será utilizado inicialmente para levantar el entorno completo.
+Docker Compose será utilizado inicialmente para levantar la infraestructura local y, posteriormente, los servicios del backend.
+
+Servicios predeterminados:
 
 ```text
-services:
-  gateway
-  auth-service
-  core-service
-  postgres
+postgres
+redis
+mailpit
+```
+
+Servicios opcionales mediante perfiles:
+
+```text
+messaging:
   cassandra
-  redis
+
+storage:
   minio
 ```
 
-Deberán existir redes internas para evitar exposición innecesaria.
+Los perfiles deberán permitir que cada integrante inicie únicamente los componentes necesarios para su tarea y reduzca el consumo de recursos.
+
+Cuando exista su implementación inicial, se añadirán:
+
+```text
+gateway
+auth-service
+core-service
+```
+
+Deberá existir una red interna para la comunicación entre contenedores. Los puertos publicados, las credenciales y las opciones locales deberán configurarse mediante variables de entorno.
 
 ---
 
@@ -775,6 +810,7 @@ Ejemplos:
 
 ```text
 postgres_data
+redis_data
 cassandra_data
 minio_data
 ```
@@ -868,8 +904,9 @@ Ejemplos:
 ADR-001 Elección de PostgreSQL
 ADR-002 Uso de Rust para autenticación
 ADR-003 Uso de Elixir/Phoenix como Core
-ADR-004 Selección Cassandra vs ScyllaDB
+ADR-004 Uso de Cassandra para mensajería e historial
 ADR-005 Uso de JavaFX para escritorio
+ADR-006 Uso de Vagrant y Docker Compose para el entorno de desarrollo
 ```
 
 Formato:
@@ -944,6 +981,8 @@ Durante el módulo inicial de autenticación deberán aplicarse por primera vez:
 - Code Review;
 - Auth Service en Rust;
 - PostgreSQL en Docker;
+- Redis para información temporal y sesiones cuando corresponda;
+- Mailpit para pruebas locales de correo y recuperación de contraseña;
 - variables de entorno;
 - hashing de contraseña;
 - pruebas unitarias;
@@ -975,7 +1014,7 @@ Toda incorporación tecnológica deberá resolver una necesidad identificable.
 
 ## Estado del documento
 
-**Versión actual:** 0.1  
+**Versión actual:** 0.2  
 **Próxima revisión:** después del diseño de arquitectura y del primer módulo de autenticación.
 
 Este estándar se considera un documento vivo.
